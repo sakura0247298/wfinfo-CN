@@ -13,12 +13,12 @@ namespace WFInfo
 
     class LogCapture : IDisposable
     {
-        private readonly MemoryMappedFile memoryMappedFile;
-        private readonly EventWaitHandle bufferReadyEvent;
+        private MemoryMappedFile memoryMappedFile;
+        private EventWaitHandle bufferReadyEvent;
         private EventWaitHandle dataReadyEvent;
         readonly CancellationTokenSource tokenSource = new CancellationTokenSource();
         private CancellationToken token;
-        private readonly Timer timer;
+        private Timer timer;
         public event LogWatcherEventHandler TextChanged;
 
         private readonly IProcessFinder _process;
@@ -29,37 +29,50 @@ namespace WFInfo
 
             token = tokenSource.Token;
             Main.AddLog("Starting LogCapture");
-            memoryMappedFile = MemoryMappedFile.CreateOrOpen("DBWIN_BUFFER", 4096L);
-
-            bufferReadyEvent = new EventWaitHandle(false, EventResetMode.AutoReset, "DBWIN_BUFFER_READY", out Boolean createdBuffer);
-
-            if (!createdBuffer)
+            
+            try
             {
-                Main.AddLog("The DBWIN_BUFFER_READY event exists.");
-                return;
+                memoryMappedFile = MemoryMappedFile.CreateOrOpen("DBWIN_BUFFER", 4096L);
+
+                bufferReadyEvent = new EventWaitHandle(false, EventResetMode.AutoReset, "DBWIN_BUFFER_READY", out Boolean createdBuffer);
+
+                if (!createdBuffer)
+                {
+                    Main.AddLog("DBWIN_BUFFER_READY event exists, trying to open it...");
+                    try
+                    {
+                        bufferReadyEvent = EventWaitHandle.OpenExisting("DBWIN_BUFFER_READY");
+                        Main.AddLog("Successfully opened existing DBWIN_BUFFER_READY event");
+                    }
+                    catch (Exception ex)
+                    {
+                        Main.AddLog("Failed to open existing DBWIN_BUFFER_READY: " + ex.Message);
+                        return;
+                    }
+                }
+
+                var startTimeSpan = TimeSpan.Zero;
+                var periodTimeSpan = TimeSpan.FromSeconds(10);
+
+                timer = new Timer((e) =>
+                {
+                    GetProcess();
+                }, null, startTimeSpan, periodTimeSpan);
             }
-
-            var startTimeSpan = TimeSpan.Zero;
-            var periodTimeSpan = TimeSpan.FromSeconds(10);
-
-            timer = new Timer((e) =>
+            catch (Exception ex)
             {
-                GetProcess();
-            }, null, startTimeSpan, periodTimeSpan);
-
+                Main.AddLog("LogCapture initialization error: " + ex.Message);
+            }
         }
 
         private void Run()
         {
-
             try
             {
                 TimeSpan timeout = TimeSpan.FromSeconds(1.0);
                 bufferReadyEvent.Set();
                 while (!token.IsCancellationRequested)
                 {
-
-
                     if (!dataReadyEvent.WaitOne(timeout))
                     {
                         continue;
@@ -115,8 +128,17 @@ namespace WFInfo
 
                 if (!createdData)
                 {
-                    Main.AddLog("The DBWIN_DATA_READY event exists.");
-                    return;
+                    Main.AddLog("DBWIN_DATA_READY event exists, trying to open it...");
+                    try
+                    {
+                        dataReadyEvent = EventWaitHandle.OpenExisting("DBWIN_DATA_READY");
+                        Main.AddLog("Successfully opened existing DBWIN_DATA_READY event");
+                    }
+                    catch (Exception ex)
+                    {
+                        Main.AddLog("Failed to open existing DBWIN_DATA_READY: " + ex.Message);
+                        return;
+                    }
                 }
 
                 Main.AddLog("Starting LogCapture Run task");
