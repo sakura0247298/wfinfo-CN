@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿using Newtonsoft.Json;
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -1996,6 +1996,10 @@ namespace WFInfo
                 long stop = watch.ElapsedMilliseconds + 5000;
                 long wait = watch.ElapsedMilliseconds;
                 long fixedStop = watch.ElapsedMilliseconds + ApplicationSettings.GlobalReadonlySettings.FixedAutoDelay;
+                const int maxRetries = 3;
+                const int retryDelayMs = 500;
+                int retryCount = 0;
+                bool success = false;
 
                 Main.AddLog("Updating window");
                 _window.UpdateWindow();
@@ -2003,7 +2007,7 @@ namespace WFInfo
                 if (ApplicationSettings.GlobalReadonlySettings.ThemeSelection == WFtheme.AUTO)
                 {
                     Main.AddLog("Using AUTO theme detection");
-                    while (watch.ElapsedMilliseconds < stop)
+                    while (watch.ElapsedMilliseconds < stop && !success)
                     {
                         if (watch.ElapsedMilliseconds <= wait) continue;
                         wait += ApplicationSettings.GlobalReadonlySettings.AutoDelay;
@@ -2013,29 +2017,45 @@ namespace WFInfo
                         if (!(diff > 40)) continue;
                         Main.AddLog("Theme detected, waiting for delay");
                         while (watch.ElapsedMilliseconds < wait) ;
-                        Main.AddLog("started auto processing");
-                        OCR.ProcessRewardScreen();
+                        
+                        while (retryCount < maxRetries && !success)
+                        {
+                            retryCount++;
+                            Main.AddLog($"Auto processing attempt {retryCount}/{maxRetries}");
+                            success = OCR.ProcessRewardScreen();
+                            if (!success && retryCount < maxRetries)
+                            {
+                                Main.AddLog($"Processing failed, retrying in {retryDelayMs}ms...");
+                                System.Threading.Thread.Sleep(retryDelayMs);
+                            }
+                        }
                         break;
                     }
                 } else
                 {
                     Main.AddLog("Using fixed delay: " + fixedStop + "ms");
                     while (watch.ElapsedMilliseconds < fixedStop) ;
-                    Main.AddLog("started auto processing (fixed delay)");
-                    OCR.ProcessRewardScreen();
+                    
+                    while (retryCount < maxRetries && !success)
+                    {
+                        retryCount++;
+                        Main.AddLog($"Auto processing attempt {retryCount}/{maxRetries}");
+                        success = OCR.ProcessRewardScreen();
+                        if (!success && retryCount < maxRetries)
+                        {
+                            Main.AddLog($"Processing failed, retrying in {retryDelayMs}ms...");
+                            System.Threading.Thread.Sleep(retryDelayMs);
+                        }
+                    }
                 }
                 watch.Stop();
-                Main.AddLog("AutoTriggered completed in " + watch.ElapsedMilliseconds + "ms");
+                Main.AddLog($"AutoTriggered completed in {watch.ElapsedMilliseconds}ms, success: {success}, retries: {retryCount}");
             }
             catch (Exception ex)
             {
                 Main.AddLog("AUTO FAILED");
                 Main.AddLog(ex.ToString());
                 Main.StatusUpdate("Auto Detection Failed", 0);
-                Main.RunOnUIThread(() =>
-                {
-                    _ = new ErrorDialogue(DateTime.Now, 0);
-                });
             }
         }
 

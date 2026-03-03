@@ -155,13 +155,13 @@ namespace WFInfo
             _windowsScreenshot = windowsScreenshot;
         }
 
-        internal static void ProcessRewardScreen(Bitmap file = null)
+        internal static bool ProcessRewardScreen(Bitmap file = null)
         {
             #region initializers
             if (processingActive)
             {
                 Main.StatusUpdate("Still Processing Reward Screen", 2);
-                return;
+                return false;
             }
 
             var primeRewards = new List<string>();
@@ -187,7 +187,8 @@ namespace WFInfo
                 if (screenshot == null)
                 {
                     Main.AddLog("Processing failed: Screenshot failed");
-                    return;
+                    processingActive = false;
+                    return false;
                 }
                 bigScreenshot = screenshot;
             }
@@ -200,7 +201,7 @@ namespace WFInfo
             {
                 processingActive = false;
                 Debug.WriteLine(e);
-                return;
+                return false;
             }
 
 
@@ -226,6 +227,7 @@ namespace WFInfo
                 processingActive = false;
                 Main.AddLog(("----  Partial Processing Time, couldn't find rewards " + (watch.ElapsedMilliseconds - start) + " ms  ------------------------------------------------------------------------------------------").Substring(0, 108));
                 Main.StatusUpdate("Couldn't find any rewards to display", 2);
+                return false;
             }
             double bestPlat = 0;
             int bestDucat = 0;
@@ -410,6 +412,7 @@ namespace WFInfo
             Main.AddLog($"===== Processing completed successfully =====");
 
             processingActive = false;
+            return true;
 
         }
 
