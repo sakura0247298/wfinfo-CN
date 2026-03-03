@@ -3,6 +3,9 @@
 WFInfo 是 Warframe 的配套应用程序，基于英文版开发。
 
 WFInfo 旨在为所有裂缝任务奖励提供快速的白金和杜卡德价格查询，帮助您轻松选择最佳奖励。
+<img width="400" height="400" alt="image" src="https://github.com/user-attachments/assets/58415311-3fdf-4e4c-afd6-629e87a77baa" />
+<img width="769" height="641" alt="image" src="https://github.com/user-attachments/assets/0222cfec-59cf-4cfd-a37b-4e734e90bd21" />
+<img width="2668" height="956" alt="image" src="https://github.com/user-attachments/assets/6b7d7bcc-c301-4f64-a793-cee8c67a8d03" />
 
 ## 工作原理
 
@@ -105,7 +108,7 @@ DE[Aidan] 已在论坛帖子中确认这不会导致封号。
 ### 热键设置
 
 - **激活热键**：默认 Print Screen
-
+- **搜索热键**：默认 CTRL+激活热键
 ## 常见问题
 
 ### 自动功能不工作？
