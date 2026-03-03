@@ -12,6 +12,7 @@ lib/
 .vs/
 *.suo
 *.user
+*.sln
 *.sln.docstates
 
 # OS files
