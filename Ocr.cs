@@ -226,13 +226,6 @@ namespace WFInfo
                 processingActive = false;
                 Main.AddLog(("----  Partial Processing Time, couldn't find rewards " + (watch.ElapsedMilliseconds - start) + " ms  ------------------------------------------------------------------------------------------").Substring(0, 108));
                 Main.StatusUpdate("Couldn't find any rewards to display", 2);
-                if (firstChecks == null)
-                {
-                    Main.RunOnUIThread(() =>
-                    {
-                        Main.SpawnErrorPopup(time);
-                    });
-                }
             }
             double bestPlat = 0;
             int bestDucat = 0;
@@ -782,11 +775,6 @@ namespace WFInfo
             if (resultCount == 0)
             {
                 Main.StatusUpdate("Couldn't find any items to display (took " + (end - start) + "ms) ", 1);
-                Main.RunOnUIThread(() =>
-                {
-                    Main.SpawnErrorPopup(DateTime.UtcNow);
-                });
-
             } 
             else
             {
