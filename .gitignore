@@ -1,0 +1,88 @@
+# Build and publish folders
+bin/
+obj/
+
+# Generated files
+Generated Files/
+
+# Third-party libraries
+lib/
+
+# IDE and editor files
+.vs/
+*.suo
+*.user
+*.sln
+*.sln.docstates
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Log files
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+
+# NuGet packages
+packages/
+.nuget/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Build outputs
+*.dll
+*.exe
+*.pdb
+*.vshost.exe
+
+# Visual Studio cache
+.vs/
+
+# ReSharper cache
+_ReSharper*/
+*.[Rr]e[Ss]harper
+
+# CodeRush cache
+.cr/
+
+# TeamCity build files
+_TeamCity*
+
+# DotCover coverage files
+*.dotCover
+
+# NCrunch files
+*.ncrunch*
+
+# VSTest test results
+TestResults/
+
+# JustCode files
+.JustCode
+
+# Build scripts
+*.ps1
+*.psm1
+
+# Backup files
+*.bak
+*.backup
+
+# Node.js dependencies
+node_modules/
+
+# npm logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# TypeScript cache
+*.tsbuildinfo

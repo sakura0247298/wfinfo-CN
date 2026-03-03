@@ -1,0 +1,61 @@
+<Window x:Class="WFInfo.Overlay"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:WFInfo"
+        mc:Ignorable="d"
+        Title="Overlay" Height="160" Width="243" WindowStyle="None" AllowsTransparency="True" ResizeMode="NoResize" ShowInTaskbar="False" Topmost="True" IsTabStop="False" Focusable="False">
+    <Window.Background>
+        <ImageBrush  ImageSource="Resources/background.jpg"/>
+    </Window.Background>
+    <Grid x:Name="BackgroundGrid" Background="#00000000">
+        <Grid.Resources>
+            <Style TargetType="TextBlock" BasedOn="{StaticResource baseStyle}">
+                <Setter Property="FontFamily" Value="{StaticResource Roboto_Condensed}" />
+            </Style>
+        </Grid.Resources>
+        <Viewbox x:Name="partMargin" Margin="0,39,0,100" HorizontalAlignment="Center">
+            <TextBlock x:Name="partText" Text="部件名称"/>
+        </Viewbox>
+        <Viewbox x:Name="volumeMargin" Margin="0,104,0,37" >
+            <TextBlock x:Name="volumeText" Text="48小时内售出XX件"/>
+        </Viewbox>
+        <Viewbox x:Name="vaultedMargin" Margin="0,15,23,130" HorizontalAlignment="Right" Visibility="Hidden" >
+            <TextBlock x:Name="vaultedText" Text="已入库" Foreground="#FF828C96" FontFamily="{StaticResource Roboto}"/>
+        </Viewbox>
+        <Viewbox x:Name="ownedMargin" Margin="23,15,0,130" HorizontalAlignment="Left" >
+            <TextBlock x:Name="ownedText" Text="拥有数量" Foreground="#FF828C96" FontFamily="{StaticResource Roboto}"/>
+        </Viewbox>
+        <Viewbox x:Name="platMargin" Margin="0,77,162,63" HorizontalAlignment="Right">
+            <TextBlock x:Name="platText" Text="100"/>
+        </Viewbox>
+        <Viewbox x:Name="ducatMargin" Margin="0,77,78,63" HorizontalAlignment="Right">
+            <TextBlock x:Name="ducatText" Text="100"/>
+        </Viewbox>
+        <Image x:Name="ducatImage" Source="Resources/ducat_w.gif" Margin="172,0,0,64" Height="20" Width="20" VerticalAlignment="Bottom" HorizontalAlignment="Left"/>
+        <Image x:Name="platImage"  Source="Resources/plat.gif"     Margin="88,0,0,64" Height="20" Width="20" VerticalAlignment="Bottom" HorizontalAlignment="Left"/>
+        <Viewbox x:Name="PlatMargineSnap" Visibility="Collapsed" Margin="30,77,0,63" HorizontalAlignment="Left" Width="26">
+            <TextBlock x:Name="PlatTextSnap" Text="090"/>
+        </Viewbox>
+        <Image x:Name="PlatImageSnap" Visibility="Collapsed"  Source="Resources/plat.gif"     Margin="61,0,0,64" Height="20" VerticalAlignment="Bottom" HorizontalAlignment="Left" Width="20"/>
+        <Viewbox x:Name="DucatMargineSnap" Visibility="Collapsed"  Margin="98,77,0,63" HorizontalAlignment="Left" Width="26">
+            <TextBlock x:Name="DucatTextSnap" Text="090" Foreground="#FFB1D0D2"/>
+        </Viewbox>
+
+
+        <Image x:Name="DucatImageSnap" Visibility="Collapsed" Source="Resources/ducat_w.gif" Margin="130,0,0,64" Height="20" VerticalAlignment="Bottom" HorizontalAlignment="Left" Width="20"/>
+        <Viewbox x:Name="EfficiencyMargin" Visibility="Collapsed" Margin="0,77,51,63" HorizontalAlignment="Right" Width="28">
+            <TextBlock x:Name="EfficiencyText" Text="009" Foreground="#FFB1D0D2"/>
+        </Viewbox>
+        <Image x:Name="EfficiencyDucatImage" Visibility="Collapsed" Source="Resources/ducat_w.gif" Margin="198,0,0,72" Height="12" Width="12" VerticalAlignment="Bottom" HorizontalAlignment="Left"/>
+        <Image x:Name="EfficiencyPlatinumImage" Visibility="Collapsed" Source="Resources/plat.gif" Margin="206,0,0,64" Height="12" VerticalAlignment="Bottom" HorizontalAlignment="Left" Width="12"/>
+
+        <Viewbox x:Name="primeSetMargin" Margin="0,125,0,10" >
+            <TextBlock x:Name="primeSetPlatText" Text="全套价格: XXX" FontSize="16"/>
+        </Viewbox>
+        <Image x:Name="setPlatImage" Source="Resources/plat.gif" Margin="115,0,0,10" Height="18" Width="18" VerticalAlignment="Bottom" HorizontalAlignment="Center"/>
+
+        <Image x:Name="warningImage" Visibility="Visible" ToolTip="此物品有较高概率被误识别" Source="Resources/warning-sign.png" Margin="0,0,180,15" Height="30" Width="30" VerticalAlignment="Bottom" HorizontalAlignment="Center"/>
+    </Grid>
+</Window>
