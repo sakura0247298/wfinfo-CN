@@ -151,6 +151,7 @@ namespace WFInfo
                 {
                     EElogWatcher = new LogCapture(_process);
                     EElogWatcher.TextChanged += LogChanged;
+                    EElogWatcher.Begin();
                 }
                 catch (Exception ex)
                 {
@@ -1471,11 +1472,15 @@ namespace WFInfo
             low = 9999;
             multipleLowest = false;
             
-            // 处理多行文本，将换行符替换为空格
-            string normalizedName = name.Replace("\n", " ").Replace("\r", "");
-            
             // 检查名称是否包含中文
-            bool containsChinese = System.Text.RegularExpressions.Regex.IsMatch(normalizedName, @"[\u4e00-\u9fa5]");
+            string flattenedName = name.Replace("\r", "");
+            bool containsChinese = System.Text.RegularExpressions.Regex.IsMatch(flattenedName, @"[\u4e00-\u9fa5]");
+
+            // 处理多行文本：中文名称的换行通常是部件后缀被折断（如“枪/管”），直接拼接；
+            // 其他语言名称的换行按空格分隔
+            string normalizedName = containsChinese
+                ? flattenedName.Replace("\n", "").Replace("\u3000", "")
+                : flattenedName.Replace("\n", " ");
             
             // 特殊处理：直接匹配中文名称映射表
             if (containsChinese)

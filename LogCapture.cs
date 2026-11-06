@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.IO.MemoryMappedFiles;
 using System.Text;
@@ -29,7 +28,7 @@ namespace WFInfo
 
             token = tokenSource.Token;
             Main.AddLog("Starting LogCapture");
-            
+
             try
             {
                 memoryMappedFile = MemoryMappedFile.CreateOrOpen("DBWIN_BUFFER", 4096L);
@@ -47,22 +46,23 @@ namespace WFInfo
                     catch (Exception ex)
                     {
                         Main.AddLog("Failed to open existing DBWIN_BUFFER_READY: " + ex.Message);
-                        return;
                     }
                 }
-
-                var startTimeSpan = TimeSpan.Zero;
-                var periodTimeSpan = TimeSpan.FromSeconds(10);
-
-                timer = new Timer((e) =>
-                {
-                    GetProcess();
-                }, null, startTimeSpan, periodTimeSpan);
             }
             catch (Exception ex)
             {
                 Main.AddLog("LogCapture initialization error: " + ex.Message);
             }
+        }
+
+        /// <summary>
+        /// 开始监听。必须在 TextChanged 事件订阅完成后再调用，
+        /// 否则首条游戏日志可能在订阅前到达，导致处理线程异常退出。
+        /// </summary>
+        public void Begin()
+        {
+            if (timer != null) return;
+            timer = new Timer((e) => GetProcess(), null, TimeSpan.Zero, TimeSpan.FromSeconds(10));
         }
 
         private void Run()
@@ -78,24 +78,18 @@ namespace WFInfo
                         continue;
                     }
 
-                    if (_process.Warframe != null && !_process.GameIsStreamed)
+                    // 单条日志解析/处理失败不应终止整个监听线程
+                    try
                     {
-                        using (MemoryMappedViewStream stream = memoryMappedFile.CreateViewStream())
-                        {
-                            using (BinaryReader reader = new BinaryReader(stream, Encoding.Default))
-                            {
-                                uint processId = reader.ReadUInt32();
-                                if (processId == _process.Warframe.Id)
-                                {
-                                    char[] chars = reader.ReadChars(4092);
-                                    int index = Array.IndexOf(chars, '\0');
-                                    string message = new string(chars, 0, index);
-                                    TextChanged(this, message.Trim());
-                                }
-                            }
-                        }
+                        ProcessMessage();
                     }
-                    bufferReadyEvent.Set();
+                    catch (Exception ex)
+                    {
+                        Main.AddLog("LogCapture message error: " + ex.Message);
+                    }
+
+                    if (!token.IsCancellationRequested)
+                        bufferReadyEvent.Set();
                 }
             }
             catch (Exception ex)
@@ -106,21 +100,34 @@ namespace WFInfo
                     _ = new ErrorDialogue(DateTime.Now, 0);
                 });
             }
-            finally
+        }
+
+        private void ProcessMessage()
+        {
+            if (_process.Warframe == null || _process.GameIsStreamed)
+                return;
+
+            using (MemoryMappedViewStream stream = memoryMappedFile.CreateViewStream())
             {
-                if (memoryMappedFile != null)
-                    memoryMappedFile.Dispose();
-
-                if (bufferReadyEvent != null)
-                    bufferReadyEvent.Dispose();
-
-                if (dataReadyEvent != null)
-                    dataReadyEvent.Dispose();
+                using (BinaryReader reader = new BinaryReader(stream, Encoding.Default))
+                {
+                    uint processId = reader.ReadUInt32();
+                    if (processId == (uint)_process.Warframe.Id)
+                    {
+                        char[] chars = reader.ReadChars(4092);
+                        int index = Array.IndexOf(chars, '\0');
+                        if (index < 0)
+                            index = chars.Length;
+                        string message = new string(chars, 0, index);
+                        TextChanged?.Invoke(this, message.Trim());
+                    }
+                }
             }
         }
 
         private void GetProcess()
         {
+            if (token.IsCancellationRequested) return;
             if (!_process.IsRunning) return;
             try
             {
@@ -142,8 +149,9 @@ namespace WFInfo
                 }
 
                 Main.AddLog("Starting LogCapture Run task");
-                Task.Factory.StartNew(Run);
+                Task.Factory.StartNew(Run, token);
                 timer.Dispose();
+                timer = null;
                 Main.AddLog("LogCapture initialized successfully");
             }
             catch (Exception ex)
@@ -154,6 +162,12 @@ namespace WFInfo
 
         public void Dispose()
         {
+            tokenSource.Cancel();
+            timer?.Dispose();
+            Main.AddLog("Stoping LogCapture");
+
+            // 释放句柄前先唤醒监听线程，避免其阻塞在 WaitOne 上
+            try { bufferReadyEvent?.Set(); } catch { }
             if (memoryMappedFile != null)
                 memoryMappedFile.Dispose();
 
@@ -163,9 +177,7 @@ namespace WFInfo
             if (dataReadyEvent != null)
                 dataReadyEvent.Dispose();
 
-            tokenSource.Cancel();
             tokenSource.Dispose();
-            Main.AddLog("Stoping LogCapture");
         }
     }
 }
