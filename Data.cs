@@ -1842,15 +1842,12 @@ namespace WFInfo
 
         private void LogChanged(object sender, string line)
         {
-            Main.AddLog("LogChanged received: " + line);
             if (autoThread != null && !autoThread.IsCompleted) 
             {
-                Main.AddLog("Auto thread already running, skipping");
                 return;
             }
             if (autoThread != null)
             {
-                Main.AddLog("Disposing existing auto thread");
                 autoThread.Dispose();
                 autoThread = null;
             }
@@ -1866,11 +1863,8 @@ namespace WFInfo
             bool hasEndMessage = line.Contains("MatchingService::EndSession") || line.Contains("Relic timer closed");
             bool hasAutoFeature = _settings.AutoList || _settings.AutoCSV || _settings.AutoCount;
             
-            Main.AddLog($"Log check - HasEndMessage: {hasEndMessage}, HasAutoFeature: {hasAutoFeature}, AutoList: {_settings.AutoList}, AutoCSV: {_settings.AutoCSV}, AutoCount: {_settings.AutoCount}");
-            
             if (!hasEndMessage || !hasAutoFeature) 
             {
-                Main.AddLog("No end session message or auto features disabled, skipping");
                 return;
             }
 

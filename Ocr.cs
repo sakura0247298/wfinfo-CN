@@ -146,6 +146,7 @@ namespace WFInfo
             IWindowInfoService window, IHDRDetectorService hdrDetector, GdiScreenshotService gdiScreenshot, WindowsCaptureScreenshotService windowsScreenshot = null)
         {
             Directory.CreateDirectory(Main.AppPath + @"\Debug");
+            ClearDebugImages();
             _soundPlayer = soundPlayer;
             _settings = settings;
             _window = window;
@@ -199,7 +200,9 @@ namespace WFInfo
             }
             catch (Exception e)
             {
+                DeleteOriginalScreenshots();
                 processingActive = false;
+                Main.AddLog("提取奖励区域失败: " + e.Message);
                 Debug.WriteLine(e);
                 return false;
             }
@@ -222,8 +225,17 @@ namespace WFInfo
 
             // Remove any empty (or suspiciously short) items from the array
             firstChecks = firstChecks.Where(s => !string.IsNullOrEmpty(s) && s.Replace(" ", "").Length > 6).ToArray();
+
+            // 重新计算本次识别结果的匹配距离，避免沿用上一次识别残留的 firstProximity 造成误判
+            firstProximity = new int[firstChecks.Length];
+            for (int i = 0; i < firstChecks.Length; i++)
+            {
+                Main.dataBase.GetPartName(firstChecks[i], out firstProximity[i], true, out _);
+            }
+
             if (firstChecks == null || firstChecks.Length == 0 || CheckIfError())
             {
+                DeleteOriginalScreenshots();
                 processingActive = false;
                 Main.AddLog(("----  Partial Processing Time, couldn't find rewards " + (watch.ElapsedMilliseconds - start) + " ms  ------------------------------------------------------------------------------------------").Substring(0, 108));
                 Main.StatusUpdate("Couldn't find any rewards to display", 2);
@@ -411,9 +423,75 @@ namespace WFInfo
             Main.AddLog($"Light mode enabled: {_settings.IsLightSelected}");
             Main.AddLog($"===== Processing completed successfully =====");
 
+            DeleteOriginalScreenshots();
             processingActive = false;
             return true;
 
+        }
+
+        /// <summary>
+        /// 启动时清空 Debug 目录中的所有图片
+        /// </summary>
+        private static void ClearDebugImages()
+        {
+            try
+            {
+                DirectoryInfo debugDirectory = new DirectoryInfo(Main.AppPath + @"\Debug");
+                if (!debugDirectory.Exists)
+                    return;
+
+                foreach (FileInfo file in debugDirectory.GetFiles())
+                {
+                    string extension = file.Extension.ToLowerInvariant();
+                    if (extension != ".png" && extension != ".jpg" && extension != ".jpeg" && extension != ".bmp")
+                        continue;
+
+                    try
+                    {
+                        file.Delete();
+                    }
+                    catch (IOException) { }
+                    catch (UnauthorizedAccessException) { }
+                }
+
+                Main.AddLog("已清空 Debug 目录中的图片");
+            }
+            catch (Exception ex)
+            {
+                Main.AddLog("清空 Debug 目录图片失败: " + ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// 删除识别用的原始截图，避免 Debug 目录占用大量磁盘空间
+        /// </summary>
+        private static void DeleteOriginalScreenshots()
+        {
+            try
+            {
+                DirectoryInfo debugDirectory = new DirectoryInfo(Main.AppPath + @"\Debug");
+                if (!debugDirectory.Exists)
+                    return;
+
+                foreach (FileInfo file in debugDirectory.GetFiles("*.png"))
+                {
+                    if (!file.Name.StartsWith("FullScreenShot") &&
+                        !file.Name.StartsWith("BorderScreenshot") &&
+                        !file.Name.StartsWith("SnapItImage "))
+                        continue;
+
+                    try
+                    {
+                        file.Delete();
+                    }
+                    catch (IOException) { }
+                    catch (UnauthorizedAccessException) { }
+                }
+            }
+            catch (Exception ex)
+            {
+                Main.AddLog("清理原始截图失败: " + ex.Message);
+            }
         }
 
         internal static int GetSelectedReward(Point lastClick)
@@ -541,8 +619,14 @@ namespace WFInfo
 
             int max = Math.Min(firstChecks.Length, firstProximity.Length);
             for (int i = 0; i < max; i++)
+            {
+                // 中文名称与英文部件名的编辑距离不可比（名称后缀差异会被算成距离），跳过该误判
+                if (System.Text.RegularExpressions.Regex.IsMatch(firstChecks[i], @"[\u4e00-\u9fa5]"))
+                    continue;
+
                 if (firstProximity[i] > ERROR_DETECTION_THRESH * firstChecks[i].Length)
                     return true;
+            }
 
             return false;
 
@@ -684,6 +768,7 @@ namespace WFInfo
             if (theme == WFtheme.UNKNOWN)
             {
                 Main.AddLog("SnapIt: Theme detection failed");
+                DeleteOriginalScreenshots();
                 return;
             }
 
@@ -789,6 +874,8 @@ namespace WFInfo
             {
                 File.AppendAllText(applicationDirectory + @"\export " + DateTime.UtcNow.ToString("yyyy-MM-dd", Main.culture) + ".csv", csv);
             }
+
+            DeleteOriginalScreenshots();
         }
 
         private static List<Tuple<Bitmap, Rectangle>> DivideSnapZones (Bitmap filteredImage, Bitmap filteredImageClean, int[] rowHits, int[] colHits) 

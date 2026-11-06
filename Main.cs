@@ -6,7 +6,6 @@ using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Text.RegularExpressions;
-using AutoUpdaterDotNET;
 using System.Windows;
 using System.Windows.Forms;
 using WFInfo.Resources;
@@ -89,9 +88,6 @@ namespace WFInfo
             StartMessage();
             buildVersion = buildVersion.Substring(0, buildVersion.LastIndexOf("."));
 
-            AutoUpdater.CheckForUpdateEvent += AutoUpdaterOnCheckForUpdateEvent;
-            AutoUpdater.Start("https://github.com/sakura0247298/wfinfo-CN/releases/latest/download/update.xml");
-
             _services = ConfigureServices(new ServiceCollection()).BuildServiceProvider();
             InitializeLegacyServices(_services);
 
@@ -149,27 +145,6 @@ namespace WFInfo
             var screenshotServices = services.GetServices<IScreenshotService>();
             _gdiScreenshot = screenshotServices.First(ss => ss is GdiScreenshotService) as GdiScreenshotService;
             _windowsScreenshot = screenshotServices.FirstOrDefault(ss => ss is WindowsCaptureScreenshotService) as WindowsCaptureScreenshotService;
-        }
-
-        private void AutoUpdaterOnCheckForUpdateEvent(UpdateInfoEventArgs args)
-        {
-            if (args == null || args.Error != null)
-            {
-                if (args?.Error != null)
-                {
-                    AddLog("Update info error arg: " + args.Error);
-                }
-                return;
-            }
-            try
-            {
-                _ = new UpdateDialogue(args);
-            }
-            catch (Exception e) 
-            { 
-                AddLog("Update checker error: " + e);
-                SpawnErrorPopup(DateTime.Now, 0);
-            }
         }
 
         public async void ThreadedDataLoad()
